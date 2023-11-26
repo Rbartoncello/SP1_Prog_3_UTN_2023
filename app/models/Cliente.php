@@ -21,17 +21,6 @@ define("RECORD_CLIENTS", "hoteles.json");
             $this->id = date("mdhis");
         }
 
-        public static function Save($client){
-            if(!Client::Exist($client)){
-                $data = Client::Get();
-                $data[] = $client;
-                echo (file_put_contents(RECORD_CLIENTS, json_encode($data, JSON_PRETTY_PRINT)))? json_encode(['response' => 'ingresado']): ['error' => 'no se puedo cargar nueva cliente'];
-            } else {
-                echo (file_put_contents(RECORD_CLIENTS, json_encode(Client::uploadData($client), JSON_PRETTY_PRINT)))? json_encode(['response' => 'actulizado']): ['error' => 'no se puedo actualizar cliente'];
-            }
-            
-        }
-
         public function createClient()
         {
             $objAccesoDatos = AccesoDatos::obtenerInstancia();
@@ -47,6 +36,42 @@ define("RECORD_CLIENTS", "hoteles.json");
             $query->bindValue(':city', $this->city, PDO::PARAM_STR);
             $query->bindValue(':phone', $this->phone, PDO::PARAM_INT);
             $query->bindValue(':paymentMethod', $this->paymentMethod, PDO::PARAM_STR);
+
+            $query->execute();
+
+            return $objAccesoDatos->obtenerUltimoId();
+        }
+
+        public static function UpdateClient($id, $name, $surname, $typeIdentification, $numberIdentification, $email, $type, $country, $city, $phone, $paymentMethod)
+        {
+            $objAccesoDatos = AccesoDatos::obtenerInstancia();
+            $query = $objAccesoDatos->prepararConsulta(
+                "UPDATE clientes 
+                SET 
+                    name=:name,
+                    surname=:surname,
+                    typeIdentification=:typeIdentification,
+                    numberIdentification=:numberIdentification,
+                    email=:email,
+                    type=:type,
+                    country=:country,
+                    city=:city,
+                    phone=:phone,
+                    paymentMethod=:paymentMethod
+                WHERE 
+                    id=:id"
+            );
+            $query->bindValue(':id', $id, PDO::PARAM_INT);
+            $query->bindValue(':name', $name, PDO::PARAM_STR);
+            $query->bindValue(':surname', $surname, PDO::PARAM_STR);
+            $query->bindValue(':typeIdentification', $typeIdentification, PDO::PARAM_STR);
+            $query->bindValue(':numberIdentification', $numberIdentification, PDO::PARAM_INT);
+            $query->bindValue(':email', $email, PDO::PARAM_STR);
+            $query->bindValue(':type', $type, PDO::PARAM_STR);
+            $query->bindValue(':country', $country, PDO::PARAM_STR);
+            $query->bindValue(':city', $city, PDO::PARAM_STR);
+            $query->bindValue(':phone', $phone, PDO::PARAM_INT);
+            $query->bindValue(':paymentMethod', $paymentMethod, PDO::PARAM_STR);
 
             $query->execute();
 
@@ -82,39 +107,23 @@ define("RECORD_CLIENTS", "hoteles.json");
             $query->bindValue(':id', $id, PDO::PARAM_STR);
             $query->bindValue(':type', $type, PDO::PARAM_STR);
             $query->execute();
-
             $client = $query->fetchObject('Client');
+
             if ($client === false) {
                 return array();
             }
             return $client;
         }
 
-        public static function uploadData($client, $data = null) {
-            if(!$data) {
-                $data = Client::Get();
-            }
+        public static function DeleteClient($id, $type)
+        {
+            $objAccesoDatos = AccesoDatos::obtenerInstancia();
+            $query = $objAccesoDatos->prepararConsulta("UPDATE clientes SET deleted=:deleted WHERE id=:id AND type=:type");
+            $query->bindValue(':id', $id, PDO::PARAM_INT);
+            $query->bindValue(':type', $type, PDO::PARAM_STR);
+            $query->bindValue(':deleted', true, PDO::PARAM_BOOL);
+            $query->execute();
 
-            foreach ($data as &$item) {
-                if (strval($item->numberIdentification) === strval($client->numberIdentification)){
-                    $id_old = $item->id;
-                    $item = $client;
-                    $item->id = $id_old;
-                }
-            }
-            return $data;
-        }
-
-        public static function Upload($client, $data = null) {
-            if(!$data) {
-                $data = Client::Get();
-            }
-
-            foreach ($data as &$item) {
-                if ((strval($item->id) === strval($client->id)) && ($item->type === $client->type)){
-                    $item = $client;
-                }
-            }
-            return $data;
+            return $query->rowCount();
         }
     }

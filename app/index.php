@@ -17,6 +17,7 @@ require_once './db/AccesoDatos.php';
 
 require_once './controllers/ClienteController.php';
 require_once './controllers/HabitacionController.php';
+require_once './controllers/AjusteController.php';
 
 // Load ENV
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
@@ -35,12 +36,17 @@ $app->addBodyParsingMiddleware();
 $app->group('/cliente', function (RouteCollectorProxy $group) {
     $group->post('[/]', \ClientController::class . ':GetOne');
     $group->post('/create', \ClientController::class . ':Create');
+    $group->put('[/]', \ClientController::class . ':Update');
+    $group->delete('[/]', \ClientController::class . ':Delete');
 });
 
 $app->group('/reserva', function (RouteCollectorProxy $group) {
     $group->post('/create', \RoomController::class . ':Create');
     $group->get('[/]', \RoomController::class . ':GetOne');
+    $group->post('/cancelar', \RoomController::class . ':Delete');
+    $group->post('/ajuste', \AdjustmentController::class . ':Create');
 });
+
 
 $app->get('[/]', function (Request $request, Response $response) {    
     $payload = json_encode(array("mensaje" => "Slim Framework 4 PHP"));

@@ -78,41 +78,73 @@ class ClientController extends Client implements IApiUsable
       }
     }
 
-    public function TraerTodos($request, $response, $args)
+    public function Update($request, $response, $args)
     {
-        $lista = Usuario::obtenerTodos();
-        $payload = json_encode(array("listaUsuario" => $lista));
-
-        $response->getBody()->write($payload);
-        return $response
-          ->withHeader('Content-Type', 'application/json');
-    }
-    
-    public function ModificarUno($request, $response, $args)
-    {
+        $queryParams = $request->getQueryParams();
+        $id = $queryParams['nroCliente'] ?? null;
         $params = $request->getParsedBody();
 
-        $nombre = $params['nombre'];
-        Usuario::modificarUsuario($nombre);
-
-        $payload = json_encode(array("mensaje" => "Usuario modificado con exito"));
-
-        $response->getBody()->write($payload);
-        return $response
-          ->withHeader('Content-Type', 'application/json');
+        if(isset($params["nombre"]) && isset($params["apellido"]) && isset($params["tipoDocumento"]) && isset($params["email"]) && isset($params["tipoCliente"]) && isset($params["pais"]) && isset($params["ciudad"]) &&isset($params["telefono"])
+          )
+        {
+          $name = $params["nombre"];
+          $surname = $params["apellido"];
+          $typeIdentification = $params["tipoDocumento"];
+          $numberIdentification = $params["documento"];
+          $email = $params["email"];
+          $type = $params["tipoCliente"];
+          $country = $params["pais"];
+          $city = $params["ciudad"];
+          $phone = $params["telefono"];
+          $paymentMethod = $params["medioPago"];
+      
+          if(isUserDataValid($typeIdentification, $numberIdentification, $phone, $email, $type))
+          {
+            try 
+            {
+                Client::UpdateClient(
+                  $id, $name, $surname, $typeIdentification, $numberIdentification, $email, $type, $country, $city, $phone, $paymentMethod
+                );
+                $payload = response(array("response" => "el usuario $id fue modificado con exito"));
+            } catch (Exception $e) 
+            {
+                $payload = response(array("error" => $e->getMessage()), 400, false);
+            }
+          } else 
+          {
+              $payload = response(array("error" => "en el ingreso de parametros"), 400, false);
+          }
+        } else 
+        {
+            $payload = response(array("error" => "parametros nulos"), 400, false);
+        }
+      $response->getBody()->write($payload);
+      return $response->withHeader('Content-Type', 'application/json');
     }
 
-    public function BorrarUno($request, $response, $args)
+    public function Delete($request, $response, $args)
     {
-        $params = $request->getParsedBody();
+        $queryParams = $request->getQueryParams();
+        $id = $queryParams['nroCliente'] ?? null;
+        $type = $queryParams['tipoCliente'] ?? null;
 
-        $usuarioId = $params['usuarioId'];
-        Usuario::borrarUsuario($usuarioId);
-
-        $payload = json_encode(array("mensaje" => "Usuario borrado con exito"));
-
-        $response->getBody()->write($payload);
-        return $response
-          ->withHeader('Content-Type', 'application/json');
+        if(isset($id) && isset($type))
+        {
+            try 
+            {
+                if(Client::DeleteClient($id, $type) > 0)
+                  $payload = response(array("response" => "el usuario $id fue eliminado con exito"));
+                else
+                  $payload = response(array("response" => "el usuario $id no exite"));
+            } catch (Exception $e) 
+            {
+                $payload = response(array("error" => $e->getMessage()), 400, false);
+            }
+        } else 
+        {
+            $payload = response(array("error" => "parametros nulos"), 400, false);
+        }
+      $response->getBody()->write($payload);
+      return $response->withHeader('Content-Type', 'application/json');
     }
 }

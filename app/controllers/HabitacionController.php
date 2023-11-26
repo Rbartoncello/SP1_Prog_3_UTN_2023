@@ -64,6 +64,35 @@ class RoomController extends Room implements IApiUsable
       }
     }
 
+    public function Delete($request, $response, $args)
+    {
+        $queryParams = $request->getQueryParams();
+        $id = $queryParams['idReserva'] ?? null;
+        $idGuest = $queryParams['nroCliente'] ?? null;
+        $typeGuest = $queryParams['tipoCliente'] ?? null;
+
+        if(isset($id) && isset($idGuest) && isset($typeGuest))
+        {
+            try 
+            {
+                if (Client::GetByTypeAndNumber($idGuest, $typeGuest)) {
+                  $rows = Room::DeleteRoom($id, $idGuest, $typeGuest);
+                  $payload = response(array("response" => "Filas que fueron modificadas $rows"));
+                } else {
+                  $payload = response(array("error" => "no exite cliente"), 404, false);
+                }
+            } catch (Exception $e) 
+            {
+                $payload = response(array("error" => $e->getMessage()), 400, false);
+            }
+        } else 
+        {
+            $payload = response(array("error" => "parametros nulos"), 400, false);
+        }
+      $response->getBody()->write($payload);
+      return $response->withHeader('Content-Type', 'application/json');
+    }
+
     public function CargarUno($request, $response, $args)
     {
         $parametros = $request->getParsedBody();
